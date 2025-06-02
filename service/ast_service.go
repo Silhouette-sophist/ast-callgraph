@@ -4,6 +4,7 @@ import (
 	"ast-callgraph/vs"
 	"context"
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -72,7 +73,10 @@ func TransverseDirectory(ctx context.Context, param *AstTransverseParam) (*AstTr
 				return err
 			}
 			// a.基于路径分析包名
-			currentPkg := deductPkgFromPath(modFileInfo, path)
+			currentPkg, err := deductPkgFromPath(modFileInfo, path)
+			if err != nil {
+				return err
+			}
 			// b.遍历节点
 			visitor := &vs.FileStructVisitor{
 				RootPkg:    modFileInfo.RootPkg,
@@ -91,8 +95,18 @@ func TransverseDirectory(ctx context.Context, param *AstTransverseParam) (*AstTr
 	return astTransverseInfo, nil
 }
 
-func deductPkgFromPath(info *ModFileInfo, path string) string {
-	return ""
+func deductPkgFromPath(info *ModFileInfo, filePath string) (string, error) {
+	// 获取文件目录
+	dir := filepath.Dir(filePath)
+	// 将路径分割为部分
+	parts := strings.Split(dir, string(filepath.Separator))
+	// 组合成实际包名
+	if len(parts) == 0 {
+		return "", fmt.Errorf("invalid file path")
+	}
+	// 组合包名
+	actualPackageName := info.RootPkg + "/" + strings.Join(parts, "/")
+	return actualPackageName, nil
 }
 
 func ParseModFile(ctx context.Context, param *AstTransverseParam) (*ModFileInfo, error) {
