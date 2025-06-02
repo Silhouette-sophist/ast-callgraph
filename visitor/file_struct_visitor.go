@@ -13,8 +13,8 @@ const (
 
 type FileStructVisitor struct {
 	RootPkg        string
-	pkg            string
-	fset           token.FileSet
+	CurrentPkg     string
+	FSet           token.FileSet
 	File           string
 	RFilePath      string
 	RawContent     []string
@@ -103,8 +103,8 @@ func (f *FileStructVisitor) CollectFileGlobalPkgVars(spec *ast.ValueSpec) {
 						Type:     f.getFullTypeName(shortPkg, typeName, false),
 						Name:     name.Name,
 						NoName:   false,
-						StartPos: f.fset.Position(name.Pos()).Offset,
-						EndPos:   f.fset.Position(name.End()).Offset,
+						StartPos: f.FSet.Position(name.Pos()).Offset,
+						EndPos:   f.FSet.Position(name.End()).Offset,
 					}
 				}
 			}
@@ -115,11 +115,11 @@ func (f *FileStructVisitor) CollectFileGlobalPkgVars(spec *ast.ValueSpec) {
 func (f *FileStructVisitor) collectStructAndDeps(n *ast.TypeSpec) {
 	if structType, ok := n.Type.(*ast.StructType); ok {
 		typeName := f.getFullTypeName(n.Name.Name, n.Name.Name, false)
-		startLine := f.fset.Position(n.Pos()).Line
-		endLine := f.fset.Position(n.End()).Line
+		startLine := f.FSet.Position(n.Pos()).Line
+		endLine := f.FSet.Position(n.End()).Line
 		currentStructInfo := &StructInfo{
 			Repo:      f.RootPkg,
-			Pkg:       f.pkg,
+			Pkg:       f.CurrentPkg,
 			File:      f.RFilePath,
 			Name:      n.Name.Name,
 			TypeName:  typeName,
@@ -142,7 +142,7 @@ func (f *FileStructVisitor) collectStructAndDeps(n *ast.TypeSpec) {
 				if shortName == "" {
 					continue
 				}
-				completePkg := f.pkg
+				completePkg := f.CurrentPkg
 				if shortPkg != "" {
 					if pkg, ok := f.ImportedPkgMap[shortPkg]; ok {
 						completePkg = pkg
@@ -190,13 +190,13 @@ func parseSimpleExpr(expr ast.Expr, includeBase bool) (shortPkg string, shortNam
 
 func (f *FileStructVisitor) getFullTypeName(shortPkg string, typeName string, receiver bool) string {
 	if receiver {
-		return fmt.Sprintf(pkgNameFormat, f.pkg, typeName)
+		return fmt.Sprintf(pkgNameFormat, f.CurrentPkg, typeName)
 	} else if pkgPath, ok := f.ImportedPkgMap[shortPkg]; ok {
 		return fmt.Sprintf(pkgNameFormat, pkgPath, typeName)
 	} else if isBasicType(typeName) {
 		return typeName
 	} else {
-		return fmt.Sprintf(pkgNameFormat, f.pkg, typeName)
+		return fmt.Sprintf(pkgNameFormat, f.CurrentPkg, typeName)
 	}
 }
 

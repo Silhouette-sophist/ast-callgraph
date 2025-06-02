@@ -67,7 +67,7 @@ func (f *FileFuncVisitor) Visit(node ast.Node) ast.Visitor {
 	var funcType *ast.FuncType
 	goFunc := &GoFunc{
 		Repo:    f.RootPkg,
-		Pkg:     f.pkg,
+		Pkg:     f.CurrentPkg,
 		File:    f.File,
 		TmpVars: make(map[string]*Var),
 	}
@@ -79,14 +79,14 @@ func (f *FileFuncVisitor) Visit(node ast.Node) ast.Visitor {
 		if goFunc.Name == "init" {
 			goFunc.Name = fmt.Sprintf("init#%d", "xxx")
 		}
-		goFunc.Begin = f.fset.Position(n.Pos())
-		goFunc.End = f.fset.Position(n.End())
+		goFunc.Begin = f.FSet.Position(n.Pos())
+		goFunc.End = f.FSet.Position(n.End())
 		f.CollectFuncBasicInfo(goFunc, funcType, recvField)
 		f.CollectFuncBodyCaller(goFunc, n.Body)
 	case *ast.FuncLit:
 		funcType = n.Type
-		goFunc.Begin = f.fset.Position(n.Pos())
-		goFunc.End = f.fset.Position(n.End())
+		goFunc.Begin = f.FSet.Position(n.Pos())
+		goFunc.End = f.FSet.Position(n.End())
 		f.CollectFuncBasicInfo(goFunc, funcType, recvField)
 		f.CollectFuncBodyCaller(goFunc, n.Body)
 
@@ -149,8 +149,8 @@ func (f *FileFuncVisitor) handleFieldList(list []*ast.Field, handle func(v *Var)
 			typeStr = "unknown"
 		}
 		isPointer := strings.HasPrefix(typeStr, "*")
-		startPos := f.fset.Position(field.Pos()).Offset
-		endPos := f.fset.Position(field.End()).Offset
+		startPos := f.FSet.Position(field.Pos()).Offset
+		endPos := f.FSet.Position(field.End()).Offset
 		if len(field.Names) > 0 {
 			for _, name := range field.Names {
 				v := &Var{
@@ -232,8 +232,8 @@ func (f *FileFuncVisitor) handleIdentCall(ident *ast.Ident, goFunc *GoFunc) {
 				goFunc.CalleeInfos = append(goFunc.CalleeInfos, &CalleeInfo{
 					Pkg:   goFunc.Pkg,
 					File:  goFunc.RFile,
-					Begin: f.fset.Position(ident.Pos()),
-					End:   f.fset.Position(ident.End()),
+					Begin: f.FSet.Position(ident.Pos()),
+					End:   f.FSet.Position(ident.End()),
 				})
 			}
 		}
@@ -248,8 +248,8 @@ func (f *FileFuncVisitor) handleSelectorExprCall(selExpr *ast.SelectorExpr, goFu
 				Pkg:   goFunc.Pkg,
 				File:  goFunc.RFile,
 				Name:  selExpr.Sel.Name,
-				Begin: f.fset.Position(ident.Pos()),
-				End:   f.fset.Position(ident.End()),
+				Begin: f.FSet.Position(ident.Pos()),
+				End:   f.FSet.Position(ident.End()),
 			}
 			if goFunc.RecvType.Type != "" {
 				info.Receiver = &goFunc.RecvType.Type
@@ -261,8 +261,8 @@ func (f *FileFuncVisitor) handleSelectorExprCall(selExpr *ast.SelectorExpr, goFu
 					Pkg:   pkgInfo,
 					File:  goFunc.RFile,
 					Name:  selExpr.Sel.Name,
-					Begin: f.fset.Position(ident.Pos()),
-					End:   f.fset.Position(ident.End()),
+					Begin: f.FSet.Position(ident.Pos()),
+					End:   f.FSet.Position(ident.End()),
 				})
 			}
 		} else if pkgVar, ok := f.VarMap[shortPkgName]; ok {
@@ -270,8 +270,8 @@ func (f *FileFuncVisitor) handleSelectorExprCall(selExpr *ast.SelectorExpr, goFu
 				Pkg:   pkgVar.Type,
 				File:  goFunc.RFile,
 				Name:  selExpr.Sel.Name,
-				Begin: f.fset.Position(ident.Pos()),
-				End:   f.fset.Position(ident.End()),
+				Begin: f.FSet.Position(ident.Pos()),
+				End:   f.FSet.Position(ident.End()),
 			})
 		} else {
 			for _, param := range goFunc.Params {
@@ -280,8 +280,8 @@ func (f *FileFuncVisitor) handleSelectorExprCall(selExpr *ast.SelectorExpr, goFu
 						Pkg:   goFunc.Pkg,
 						File:  goFunc.RFile,
 						Name:  selExpr.Sel.Name,
-						Begin: f.fset.Position(ident.Pos()),
-						End:   f.fset.Position(ident.End()),
+						Begin: f.FSet.Position(ident.Pos()),
+						End:   f.FSet.Position(ident.End()),
 					})
 				}
 			}
