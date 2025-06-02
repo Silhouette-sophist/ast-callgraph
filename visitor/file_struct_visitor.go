@@ -15,6 +15,7 @@ type FileStructVisitor struct {
 	RootPkg        string
 	pkg            string
 	fset           token.FileSet
+	File           string
 	RFilePath      string
 	RawContent     []string
 	ImportedPkgMap map[string]string
