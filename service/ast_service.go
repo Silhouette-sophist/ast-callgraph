@@ -8,12 +8,13 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"golang.org/x/mod/modfile"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/cloudwego/hertz/pkg/common/hlog"
+	"golang.org/x/mod/modfile"
 )
 
 type AstTransverseParam struct {
@@ -43,6 +44,7 @@ func TransverseDirectory(ctx context.Context, param *AstTransverseParam) (*AstTr
 	// 1.匹配go.mod文件内容
 	modFileInfo, err := ParseModFile(ctx, param)
 	if err != nil || modFileInfo == nil {
+		hlog.CtxWarnf(ctx, "TransverseDirectory ParseModFile err")
 		return nil, errors.New("invalid go mod path")
 	}
 	// 2.构造返回值
@@ -55,6 +57,7 @@ func TransverseDirectory(ctx context.Context, param *AstTransverseParam) (*AstTr
 	if err := filepath.Walk(param.Directory, func(path string, info fs.FileInfo, err error) error {
 		// 错误是否传播
 		if err != nil {
+			hlog.CtxWarnf(ctx, "TransverseDirectory Walk %s err %v", path, err)
 			return err
 		}
 		// 目录是否遍历
@@ -66,15 +69,18 @@ func TransverseDirectory(ctx context.Context, param *AstTransverseParam) (*AstTr
 			fileSet := token.NewFileSet()
 			fileContent, err := os.ReadFile(path)
 			if err != nil {
+				hlog.CtxWarnf(ctx, "TransverseDirectory ReadFile err %v", err)
 				return err
 			}
 			astFile, err := parser.ParseFile(fileSet, path, fileContent, parser.ParseComments)
 			if err != nil {
+				hlog.CtxWarnf(ctx, "TransverseDirectory ParseFile err %v", err)
 				return err
 			}
 			// a.基于路径分析包名
 			currentPkg, err := deductPkgFromPath(modFileInfo, path)
 			if err != nil {
+				hlog.CtxWarnf(ctx, "TransverseDirectory deductPkgFromPath err %v", err)
 				return err
 			}
 			// b.遍历节点
@@ -90,6 +96,7 @@ func TransverseDirectory(ctx context.Context, param *AstTransverseParam) (*AstTr
 		}
 		return err
 	}); err != nil {
+		hlog.CtxWarnf(ctx, "TransverseDirectory Walk err %v", err)
 		return nil, err
 	}
 	return astTransverseInfo, nil
@@ -118,13 +125,13 @@ func ParseModFile(ctx context.Context, param *AstTransverseParam) (*ModFileInfo,
 	}
 	modFileContent, err := os.ReadFile(goModPath)
 	if err != nil {
-		log.Fatalf("Error reading go.mod: %v", err)
+		hlog.CtxWarnf(ctx, "TransverseDirectory ReadFile err %v", err)
 		return nil, err
 	}
 	// 解析 go.mod 文件
 	modFile, err := modfile.Parse("go.mod", modFileContent, nil)
 	if err != nil {
-		log.Fatalf("Error parsing go.mod: %v", err)
+		hlog.CtxWarnf(ctx, "TransverseDirectory Parse err %v", err)
 		return nil, err
 	}
 	if modFile != nil {

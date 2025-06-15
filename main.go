@@ -14,8 +14,10 @@ func main() {
 	defer func() {
 		hlog.CtxInfof(ctx, "exec cost %.2f", time.Since(start).Seconds())
 	}()
+	goModPath := "/Users/silhouette/work-practice/ast-callgraph/go.mod"
 	astTransverseInfo, err := service.TransverseDirectory(ctx, &service.AstTransverseParam{
 		Directory: "/Users/silhouette/work-practice/ast-callgraph",
+		GoModPath: &goModPath,
 	})
 	if err != nil {
 		hlog.CtxInfof(ctx, "TransverseDirectory err: %v", err)
